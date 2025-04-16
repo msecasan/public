@@ -1,9 +1,4 @@
----
-title: "Test"
-author: "Marc Secasan"
-date: "2025-04-08"
-output: html_document
----
+
 Load Libraries and initial file setup
 
 ```{r} setup, include=FALSE}
@@ -26,7 +21,6 @@ library(caret)
 
 Primary data entry and cleaning
 ```{R}
-setwd("/Users/marcsecasan/Desktop/R")
 pokemondata <- read.csv("all_pokemon_data.csv")
 con <- dbConnect(SQLite(), "PokeDB.sqlite")
 dbWriteTable(con, "pokemon", pokemondata, overwrite = TRUE)

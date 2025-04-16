@@ -1,7 +1,7 @@
 
 Load Libraries and initial file setup
 
-```{r} setup, include=FALSE}
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 #install.packages("RSQLite")
 #install.packages("Rtsne")

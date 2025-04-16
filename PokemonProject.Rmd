@@ -20,6 +20,7 @@ library(caret)
 ```
 
 Primary data entry and cleaning
+
 ```{r}
 pokemondata <- read.csv("all_pokemon_data.csv")
 con <- dbConnect(SQLite(), "PokeDB.sqlite")
@@ -70,12 +71,15 @@ data$Generation <- recode(data$Generation,
 ```
 
 Little data manipulation/exploration
+
 ```{r}
 data$Evolution.Stage <- as.factor(data$Evolution.Stage)
 #describe(data)
+
 ```
 
 Chi-squared analysis for multiple variables
+
 ```{r}
 df <- data
 
@@ -123,6 +127,7 @@ print(chi_results)
 ```
 
 Correlation Matrix of 
+
 ```{r}
 #Extract numeric columns from df
 dfNum <- df[, sapply(df, is.numeric)]
@@ -130,9 +135,11 @@ dfNum <- df[, sapply(df, is.numeric)]
 #Create and print correlation matrix
 Corrs <- cor(dfNum)
 Corrs
+
 ```
 
 Compute entropy 
+
 ```{r}
 #Extract column names
 col_name <- colnames(data)
@@ -158,6 +165,7 @@ for (col_name in colnames(data)) {
 ```
 
 ANOVA by Legendary status
+
 ```{r}
 #Register dfNum as data frame
 dfNum <- as.data.frame(dfNum)
@@ -174,6 +182,7 @@ print(results)
 ```
 
 Boxplot of baseline stats by evolution stage. Clear differences in distribtuions and means between evolution stages.
+
 ```{r}
 ggplot(data, aes(x = Evolution.Stage, y = Base.Stat.Total, fill = Evolution.Stage)) +
   geom_boxplot(outlier.shape = NA)+
@@ -186,9 +195,11 @@ ggplot(data, aes(x = Evolution.Stage, y = Base.Stat.Total, fill = Evolution.Stag
   ) +
     ggtitle("Base Stats by Evolution Stage") +
     theme(plot.title = element_text(hjust = 0.5))
+
 ```
 
 Boxplot of baseline stats by legendary. Significant difference between legendary and non legendary distributions and means.
+
 ```{r}
 # Create the boxplot
 ggplot(data, aes(x = Legendary.Status, y = Base.Stat.Total, fill = Legendary.Status)) +
@@ -200,9 +211,11 @@ ggplot(data, aes(x = Legendary.Status, y = Base.Stat.Total, fill = Legendary.Sta
        x = "Legendary Pokémon",
        y = "Base Stat Total") +
   theme(legend.position = "right")
+
 ```
 
 Density plot of baseline stats per evolution stage - with means. Distribution of 1st stage evolution heavily skewed right. 2nd stage is closer to a normal distribution but still has an uneven distribution. Stage 3 evolutions are the messiest distribution of the lot but tending to normal. With more observations, the distributions will normalize (natrually).
+
 ```{r}
 cols <- c("#72D8FF", "#FFFFBF", "#F76D5E")
 
@@ -228,6 +241,7 @@ ggplot(data, aes(x = Base.Stat.Total, fill = Evolution.Stage)) +
 
 ```
 Density plots of baseline stats by legendary and non legendary pokemon with means. Legendary pokemon mean exceeds the non legendary mean by 200 points (or 100%). Non-legendary distribtuion almost seems multimodal from visual inspection.
+
 ```{r}
 cols <- c("#72D8FF", "#FFFFBF")
 
@@ -256,6 +270,7 @@ ggplot(data, aes(x = Base.Stat.Total, fill = Legendary.Status)) +
 PCA Plot
 Pokémon at the top of the graph are likely slow, tanky defenders.
 Pokémon at the bottom are likely fragile but fast and offensive.
+
 ```{r}
 
 # Select base stat columns
@@ -293,6 +308,7 @@ ggplot(pokemon_pca, aes(x = PC1, y = PC2, color = Primary.Typing)) +
 ```
 
 Prep data for radar chart
+
 ```{r}
 #Pull non-legendary pokemon from pokemon db
 dataNotLegendary <- dbGetQuery(con, "SELECT * FROM pokemon WHERE `Legendary.Status` = 'False'")
@@ -327,6 +343,7 @@ rownames(RadarStats) <- c("Max", "Min", "Non-Legendary", "Legendary")
 ```
 
 Radar plot legendary vs non legendary. Legendary pokemon outperform non legendary pokemon, exceedingly so in every category. 
+
 ```{r}
 library(fmsb)
 
@@ -353,6 +370,7 @@ legend("topright",
 ```
 
 Variance Radar graph legendary vs non legendary. Variances seem fairly consistent for each category and by each factor, with non-legendary pokemon seeing a slight amount more variance per category than legendary.
+
 ```{r}
 #Compute the variance of each column by factor
 NonLegendVar <- apply(dataNotLegendaryStats,2, var)
@@ -391,15 +409,18 @@ legend("topright",
 ```
 
 Catch Rate vs Strength scatter plot with Legendary as factor. As base line stats increase, catch rate decreases, and we see a weak cluster of legendary Pokemon in this extreme category of high baseline and low catch rate.
+
 ```{r}
 ggplot(data, aes(x = Base.Stat.Total, y = Catch.Rate, color = as.factor(Legendary.Status))) +
   geom_point(alpha = 0.6) +
   labs(x = "Total Base Stats", y = "Catch Rate", title = "Catch Rate vs. Strength") +
   scale_color_manual(values = c("gray", "red"), labels = c("Non-Legendary", "Legendary")) +
   theme_minimal()
+
 ```
 
 BoxPlot of Baseline stats by Generation and ANOVA. A boxplot analysis shows that baseline stats do vary by generation, with gens 4,7 and 9 having the three highest averages and gen 5 having the smallest range. An anova test backs this up with most numeric variables varying significantly between generations.
+
 ```{r}
 # Now plot boxplots of baseline stats by generation 
 ggplot(data, aes(y = Base.Stat.Total, as.factor(Generation))) +
@@ -424,13 +445,18 @@ results <- lapply(names(dfNum), function(var) {
 })
 names(results) <- names(dfNum)
 print(results)
+
 ```
+
 Reloading pROC as to not have issues with radar plot functions.
+
 ```{r}
 library(pROC)
+
 ```
 
 Prep data for logistic model and xgBoost
+
 ```{r}
 # Convert target to factor
 data$Legendary.Status <- as.factor(data$Legendary.Status)
@@ -467,6 +493,7 @@ pokemon_name_test <- pokemon_name[-train_index]  # get test names only
 ```
 
 Logistic model and ROC curve. Model accuracy is 92.8%
+
 ```{r}
 library(caret)
 log_model <- glm(Legendary.Status ~ ., data = train_data, family = "binomial")
@@ -497,6 +524,7 @@ cat("AUC:", auc_value, "\n")
 ```
 
 Reduce logistic model using stepwise reduction in both directions. We end up eliminating all factor variables and only keep numeric. Our accuracy does not change while the AIC falls to 221.55, using only numeric variables. All of which are statistically significant. 
+
 ```{r}
 # Stepwise AIC reduction
 log_model_reduced <- step(log_model, direction = "both")
@@ -525,9 +553,11 @@ abline(a = 0, b = 1, lty = 2, col = "gray")
 #Calculate AUC
 auc_value2 <- auc(log_roc2)
 cat("AUC:", auc_value2, "\n")
+
 ```
 
 First xgBoost model. We find that our top variables of importance are catch rate, attack, special attack and health. These are the only variables that we will run in our reduced model. Model accuracy is 93.22% with 95% conf. interval (0.8922, 0.9608)%
+
 ```{r}
 library(xgboost)
 #install.packages("caTools")  
@@ -604,9 +634,11 @@ confusionMatrix(factor(xgb_preds$ActualClass), factor(xgb_preds$PredictedClass))
 cm <- confusionMatrix(factor(xgb_preds$ActualClass), factor(xgb_preds$PredictedClass))
 cfm <- as_tibble(cm$table)
 plot_confusion_matrix(cfm, target_col = "Reference", prediction_col = "Prediction", counts_col = "n")
+
 ```
 
 xgBoost ROC curve. AUC = 0.968
+
 ```{r}
 xgb_pred_prob <- xgb_preds$True
 
@@ -624,6 +656,7 @@ legend("bottomright", legend = paste("AUC =", round(auc_val, 3)), col = "darkora
 ```
 
 Reduce xgBoost and ROC curve. Having only used the top four variables of importance and increase nrounds to 500 from 50, accuracy decrease to 92.37% with 95% conf. interval (0.8821, 0.9542)%. AUC also decreased to 0.964. For a large reduction in variables, this is a minor reduction in predicting power.
+
 ```{r}
 library(caret)
 library(xgboost)

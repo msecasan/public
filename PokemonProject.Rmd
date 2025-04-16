@@ -1,3 +1,10 @@
+---
+title: "Pokemon"
+author: John Doe
+date: March 22, 2005
+output: github_document
+---
+
 
 Load Libraries and initial file setup
 
